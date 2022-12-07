@@ -1,14 +1,7 @@
 import React from 'react'
 
-const withMaskability = (Component: React.FC<any>) => {
-  const internal = ({
-    hiddenRoles,
-    user,
-    ...props
-  }: {
-    hiddenRoles: string
-    user: { role: string }
-  }) => {
+const withMaskability = Component => {
+  const internal = ({ hiddenRoles, user, ...props }) => {
     const rolesToHide = JSON.parse(hiddenRoles)
     const roleUser = user?.role
 
