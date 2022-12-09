@@ -9,6 +9,7 @@ export type AppState = {
   showRightPanel: boolean
   pageLayout: boolean
   showOverview: boolean
+  showWarnings: boolean
   mediasLayout: boolean
   showCode: boolean
   inputTextFocused: boolean
