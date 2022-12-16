@@ -8,7 +8,8 @@ const withDynamicInput = Component => {
   const Internal = ({ dataSource, context, backend, ...props }) => {
     let keptValue = lodash.get(dataSource, props.attribute)
 
-    const isADate = !isNaN(Date.parse(keptValue)) && new Date(Date.parse(keptValue));
+    const ThingToParse = new Date.parse(keptValue)
+    const isADate = !isNaN(ThingToParse) && new Date(Date.parse(keptValue));
 
     if (isADate instanceof Date) {
 
