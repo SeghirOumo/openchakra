@@ -1,4 +1,4 @@
-import { Box, Text } from '@chakra-ui/react'
+import { Box, Text, Button, FormControl } from 'native-base'
 import React, { useEffect, useState, useCallback } from 'react'
 import FileManager from '../utils/S3filemanager'
 import { s3Config, S3UrlRessource } from '../utils/s3Config'
@@ -6,7 +6,11 @@ import axios from 'axios'
 import mime from 'mime'
 import JSZip from 'jszip'
 import xmljs from 'xml-js'
-import styled from '@emotion/styled'
+import styled from '@emotion/native'
+import DocumentPicker,  {
+  DirectoryPickerResponse,
+  DocumentPickerResponse, isInProgress
+} from 'react-native-document-picker'
 import { getExtension } from './MediaWrapper'
 
 const uploadUrl = `/myAlfred/api/studio/action`
@@ -74,6 +78,9 @@ const UploadFile = ({
     s3Config.secretAccessKey || '',
   )
   const [uploadInfo, setUploadInfo] = useState('')
+  const [result, setResult] = React.useState<
+    Array<DocumentPickerResponse> | DirectoryPickerResponse | undefined | null
+  >()
   const [file, setFile] = useState<File | null>()
   const [s3File, setS3File] = useState<string|null>()
 
@@ -81,6 +88,17 @@ const UploadFile = ({
     e.preventDefault()
     const currentFile = e.target.files && e.target.files[0]
     setFile(currentFile)
+  }
+
+  const handleError = (err: unknown) => {
+    if (DocumentPicker.isCancel(err)) {
+      console.warn('cancelled')
+      // User cancelled the picker, exit any dialogs or menus and move on
+    } else if (isInProgress(err)) {
+      console.warn('multiple pickers were opened, only the last will be considered')
+    } else {
+      throw err
+    }
   }
 
   const handleUpload = useCallback(
@@ -164,36 +182,49 @@ const UploadFile = ({
   }, [file, handleUpload])
 
   return (
-    <Box {...props} data-value={s3File} display='flex' flexDirection='row'>
-      <form id="uploadressource">
-        <UploadZone>
-          <input type="file" onChange={onFileNameChange} />
+    <Box {...props} data-value={s3File}>
+      <FormControl >
+        
+          {/* <input type="file" onChange={onFileNameChange} /> */}
+          <Button
+            title="open picker for single file selection"
+            onPress={async () => {
+              try {
+                const pickerResult = await DocumentPicker.pickSingle({
+                  presentationStyle: 'fullScreen',
+                  copyTo: 'cachesDirectory',
+                })
+                setResult([pickerResult])
+              } catch (e) {
+                handleError(e)
+              }
+            }}
+      />
           {/* Whatever in children, it bring focus on InputFile */}
           {children}
-        </UploadZone>
-      </form>
+      </FormControl>
       <img width={100} src={s3File || undefined} />
       {uploadInfo && <Text>{uploadInfo}</Text>} {/*Component status */}
     </Box>
   )
 }
 
-const UploadZone = styled.label`
-  input[type='file'] {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
-  }
+// const UploadZone = styled.FormControl`
+//   input[type='file'] {
+//     position: absolute;
+//     width: 1px;
+//     height: 1px;
+//     padding: 0;
+//     margin: -1px;
+//     overflow: hidden;
+//     clip: rect(0, 0, 0, 0);
+//     white-space: nowrap;
+//     border-width: 0;
+//   }
 
-  *:not(input[type='file']) {
-    pointer-events: none;
-  }
-`
+//   *:not(input[type='file']) {
+//     pointer-events: none;
+//   }
+// `
 
 export default UploadFile
