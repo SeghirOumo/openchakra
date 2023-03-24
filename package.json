@@ -1,0 +1,36 @@
+{
+  "name": "wappizy",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/Wappizy/openchakra",
+  "author": "Richard Pasquiou <richard.pasquiou@alfredplace.io>",
+  "license": "MIT",
+  "workspaces": [
+    "studio",
+    "studio-test",
+    "studio-test-native"
+  ],
+  "private": true,
+  "scripts": {
+    "lint": "eslint --ignore-path .gitignore \"**/studio/src/*.+(js|jsx|ts|tsx)\" \"**/studio-test/src/*.+(js|jsx|ts|tsx)\" --fix",
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|json|ts|tsx)\""
+  },
+  "devDependencies": {
+    "@babel/core": "^7.21.3",
+    "@babel/preset-typescript": "^7.21.0",
+    "@babel/runtime": "^7.21.0",
+    "@react-native-community/eslint-config": "^3.2.0",
+    "@typescript-eslint/eslint-plugin": "^5.56.0",
+    "@typescript-eslint/parser": "^5.56.0",
+    "babel-eslint": "^10.1.0",
+    "babel-jest": "^29.5.0",
+    "eslint": "^8.36.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.0",
+    "prettier": "^2.8.7",
+    "standard": "^17.0.0",
+    "typescript": "^5.0.2"
+  }
+}

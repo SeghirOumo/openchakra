@@ -67,12 +67,6 @@
     "test": "jest",
     "analyze": "BUNDLE_VISUALIZE=1 react-app-rewired build"
   },
-  "eslintConfig": {
-    "test": "jest --watch",
-    "test:ci": "jest --ci",
-    "analyze": "BUNDLE_VISUALIZE=1 react-app-rewired build",
-    "lint": "next lint"
-  },
   "browserslist": {
     "production": [
       ">0.2%",

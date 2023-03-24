@@ -8,6 +8,7 @@
     "node": true,
     "es6": true
   },
+  "extends": ["eslint:recommended", "eslint-config-prettier"],
   "rules": {
     "react/jsx-uses-react": "error",
     "react/jsx-uses-vars": "error",
@@ -156,5 +157,17 @@
     "react-hooks/rules-of-hooks": "error", // Vérifie les règles des Hooks
     "react-hooks/exhaustive-deps": "warn", // Vérifie les tableaux de dépendances
     "import/order": 1
-  }
+  },
+  "overrides": [
+    {
+      "files": "**/*.+(ts|tsx)",
+      "parser": "@typescript-eslint/parser",
+      "plugins": ["@typescript-eslint/eslint-plugin"],
+      "extends": [
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended",
+        "eslint-config-prettier" /* Avoid prettier conflicts */
+      ]
+    }
+  ]
 }

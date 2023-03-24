@@ -1,0 +1,4 @@
+{
+  "**/*.{js,json,md,mdx,html,css,scss}": "yarn format"
+}
+
