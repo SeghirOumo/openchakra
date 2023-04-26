@@ -57,6 +57,7 @@ type ComponentType =
   | 'List'
   | 'ListItem'
   | 'ListIcon'
+  | 'Localisation'
   | 'Media'
   | 'Menu'
   | 'NumberFormat'
