@@ -76,6 +76,11 @@ require('./models/Diploma')
 require('./models/Photo')
 require('./models/Mission')
 require('./models/QuotationDetail')
+require('./models/Contact')
+require('./models/Recipe')
+require('./models/Instrument')
+require('./models/Ingredient')
+require('./models/RecipeIngredient')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 

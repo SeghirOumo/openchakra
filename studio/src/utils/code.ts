@@ -4,6 +4,7 @@ import isBoolean from 'lodash/isBoolean'
 import lodash from 'lodash';
 
 import icons from '~iconsList'
+import lucidicons from '~lucideiconsList'
 
 import {
   ACTION_TYPE,
@@ -27,9 +28,12 @@ import {
   capitalize,
   getPageFileName,
   getPageUrl,
-  normalizePageName
+  normalizePageName,
+  whatTheHexaColor,
+  iconStuff,
 } from './misc';
 import { isJsonString } from '../dependencies/utils/misc'
+
 
 //const HIDDEN_ATTRIBUTES=['dataSource', 'attribute']
 const HIDDEN_ATTRIBUTES: string[] = []
@@ -320,8 +324,13 @@ const buildBlock = ({
             propName.toLowerCase().includes('icon') &&
             childComponent.type !== 'Icon'
           ) {
-            if (Object.keys(icons).includes(propsValue)) {
-              let operand = `={<${propsValue} />}`
+            const iconSets = {...icons, ...lucidicons}
+            if (Object.keys(iconSets).includes(propsValue)) {
+              const {color, fill} = childComponent.props
+              const iconColor = whatTheHexaColor(color || 'black')
+              const fillIconColor = whatTheHexaColor(fill || 'black')
+
+              let operand = `={<${propsValue} color={'${iconColor}'} ${fill ? `fill={'${fillIconColor}'}` : ''} />}`
               propsContent += `${propName}${operand} `
             }
           } else if (
@@ -350,7 +359,11 @@ const buildBlock = ({
             if (propName=='href') {
               operand=`="${getPageUrl(propsValue, pages)}"`
             }
-
+            
+            if (['color', 'fill'].includes(propName)) {
+              operand=`="${whatTheHexaColor(propsValue)}"`
+            }
+            
             propsContent += ` ${propName}${operand}`
           }
         })
@@ -474,10 +487,17 @@ const ${componentName} = () => (
   return code
 }
 
-const getIconsImports = (components: IComponents) => {
+const getIconsImports = (components: IComponents, lib?: string | null) => {
   return Object.keys(components).flatMap(name => {
     return Object.keys(components[name].props)
       .filter(prop => prop.toLowerCase().includes('icon'))
+      .filter(() => {
+        if (components[name].props?.['data-lib']) {
+          return components[name].props?.['data-lib'].includes(lib ?? "chakra")
+        } else {
+          return !lib
+        }
+      })
       .filter(prop => !!components[name].props[prop])
       .map(prop => components[name].props[prop])
   })
@@ -560,7 +580,7 @@ const buildHooks = (components: IComponents) => {
 
         let query= `get(\`${apiUrl}\`)
         ${thenClause}
-        .catch(err => !(err.response?.status==401) && err.code!='ERR_NETWORK' && alert(err?.response?.data || err))`
+        .catch(err => !(err.response?.status==401) && err.code!='ERR_NETWORK' && console.log(err?.response?.data || err))`
         if (dp.id=='root' && singlePage) {
           query=`// For single data page\nif (id) {\n${query}\n}`
         }
@@ -588,7 +608,7 @@ const buildDynamics = (components: IComponents, extraImports: string[]) => {
   const groups = lodash.groupBy(dynamicComps, c => getDynamicType(c))
   Object.keys(groups).forEach(g =>
     extraImports.push(
-      `import withDynamic${g} from './dependencies/hoc/withDynamic${g}'`,
+      `import withDynamic${g} from '../dependencies/hoc/withDynamic${g}'`,
     ),
   )
 
@@ -617,7 +637,7 @@ const buildMaskable = (components: IComponents, extraImports: string[]) => {
     .uniq()
 
   extraImports.push(
-    `import withMaskability from './dependencies/hoc/withMaskability'`,
+    `import withMaskability from '../dependencies/hoc/withMaskability'`,
   )
   let code = types
     .map(type => `const Maskable${type}=withMaskability(${type})`)
@@ -651,7 +671,11 @@ export const generateCode = async (
     noAutoSaveComponents
   })
   let componentsCodes = buildComponents(components, pages, singleDataPage, noAutoSaveComponents)
+  
+  const lucideIconImports = [...new Set(getIconsImports(components, 'lucid'))]
   const iconImports = [...new Set(getIconsImports(components))]
+
+  
 
   const imports = [
     ...new Set(
@@ -671,7 +695,7 @@ export const generateCode = async (
   )
   */
   const groupedComponents = lodash.groupBy(imports, c =>
-    module[c] ? '@chakra-ui/react' : `./dependencies/custom-components/${c}`,
+    module[c] ? '@chakra-ui/react' : `../dependencies/custom-components/${c}`,
   )
 
   const rootIdQuery = components['root']?.props?.model
@@ -686,7 +710,7 @@ export const generateCode = async (
   :
   ''
   code = `import React, {useState, useEffect} from 'react';
-  import Metadata from './dependencies/Metadata';
+  import Metadata from '../dependencies/Metadata';
   ${hooksCode ? `import axios from 'axios'` : ''}
   import {ChakraProvider} from "@chakra-ui/react";
   ${Object.entries(groupedComponents)
@@ -704,13 +728,18 @@ ${
 import { ${iconImports.join(',')} } from "@chakra-ui/icons";`
     : ''
 }
+${
+  lucideIconImports.length
+    ? `
+import { ${lucideIconImports.join(',')} } from "lucide-react";`
+    : ''
+}
 
-import Fonts from './dependencies/theme/Fonts'
-import {ensureToken} from './dependencies/utils/token'
-import {useLocation} from "react-router-dom"
-import { useUserContext } from './dependencies/context/user'
-import { getComponentDataValue } from './dependencies/utils/values'
-import theme from './dependencies/theme/theme'
+import {ensureToken} from '../dependencies/utils/token'
+import {useRouter} from 'next/router'
+import { useUserContext } from '../dependencies/context/user'
+import { getComponentDataValue } from '../dependencies/utils/values'
+
 ${extraImports.join('\n')}
 
 ${dynamics || ''}
@@ -718,7 +747,8 @@ ${maskable || ''}
 ${componentsCodes}
 
 const ${componentName} = () => {
-  const query = new URLSearchParams(useLocation().search)
+  const router = useRouter();
+  const query = new URLSearchParams(router?.asPath)
   const id=${rootIgnoreUrlParams ? 'null' : `query.get('${rootIdQuery}') || query.get('id')`}
   const [componentsValues, setComponentsValues]=useState({})
 
@@ -749,15 +779,14 @@ const ${componentName} = () => {
   ${filterStates}
 
   return ${redirectPage ? 'user===null && ': ''} (
-  <ChakraProvider resetCSS theme={theme}>
-    <Fonts />
+  <>
     <Metadata
       metaTitle={'${metaTitle}'}
       metaDescription={'${metaDescription}'}
       metaImageUrl={'${metaImageUrl}'}
     />
     ${code}
-  </ChakraProvider>
+  </>
 )};
 
 export default ${componentName};`

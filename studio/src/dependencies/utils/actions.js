@@ -65,9 +65,10 @@ export const ACTIONS = {
       [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'),
         getComponentValue(c, level)||null]
     ))
-    'job,mission,quotation'.split(',').forEach(property => {
+    'job,mission,quotation,group,parent,content'.split(',').forEach(property => {
       if (props[property]) {
-        const dataId=document.getElementById(`${props[property]}${level}`)?.getAttribute('_id')
+        //const dataId=document.getElementById(`${props[property]}${level}`)?.getAttribute('_id')
+        const dataId=getComponent(props[property], level)?.getAttribute('_id')||null
         body[property]=dataId
       }
     })
@@ -368,12 +369,13 @@ export const ACTIONS = {
     return axios.post(url, body)
   },
 
-  addTarget: ({ value, context, append }) => {
+  addToContext: ({ value, context, contextAttribute, append }) => {
     let url = `${API_ROOT}/action`
     const body = {
-      action: 'addTarget',
+      action: 'addToContext',
       value,
       context,
+      contextAttribute,
       append,
     }
     return axios.post(url, body)
@@ -541,4 +543,79 @@ export const ACTIONS = {
     }
     return axios.post(url, body)
   },
+
+  smartdiet_join_group: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_join_group',
+      value: value._id,
+      join: true,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        return {_id: res.data}
+      })
+  },
+
+  smartdiet_leave_group: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_join_group',
+      value: value._id,
+      join: false,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        return {_id: res.data}
+      })
+  },
+
+  smartdiet_skip_event: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_skip_event',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        return {_id: res.data}
+      })
+  },
+
+  smartdiet_join_event: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_join_event',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        return {_id: res.data}
+      })
+  },
+
+  smartdiet_pass_event: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_pass_event',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        return {_id: res.data}
+      })
+  },
+
+  alle_ask_contact: ({ value, context, props, level, getComponentValue }) => {
+    const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
+    const body = Object.fromEntries(components.map(c =>
+      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'),
+        getComponentValue(c, level)||null]
+    ))
+
+    body.action='alle_ask_contact'
+    let url = `${API_ROOT}/anonymous-action`
+    return axios.post(url, body)
+  },
+
 }
