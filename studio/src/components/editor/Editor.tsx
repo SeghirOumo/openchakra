@@ -13,7 +13,8 @@ import devices from '~config/devices'
 import useDispatch from '~hooks/useDispatch'
 
 import { getWarnings } from '../../core/selectors/components'
-import config from '../../../env.json'
+import { API_PATH } from '~dependencies/utils/consts'
+
 
 export const gridStyles = {
   backgroundImage:
@@ -56,7 +57,7 @@ const Editor: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get(`${config.targetDomain}/myAlfred/api/studio/models`)
+      .get(`${process.env.NEXT_PUBLIC_BACKEND}${API_PATH}/studio/models`)
       .then(res => {
         if (!res.data) {
           throw new Error()
@@ -70,7 +71,7 @@ const Editor: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get(`${config.targetDomain}/myAlfred/api/studio/roles`)
+      .get(`${process.env.NEXT_PUBLIC_BACKEND}${API_PATH}/studio/roles`)
       .then(res => {
         if (!res) {
           throw new Error()
