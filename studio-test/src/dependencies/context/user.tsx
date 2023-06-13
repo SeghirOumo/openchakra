@@ -6,6 +6,7 @@ import React, {
   useCallback,
 } from 'react'
 import axios from 'axios'
+import { API_PATH } from '../utils/consts'
 
 export type UserCtx = {
   [key:string]: any
@@ -20,7 +21,7 @@ export function UserWrapper({ children } : {children: React.ReactElement}) {
 
   const getCurrentUser = useCallback(() => {
     axios
-      .get(`/myAlfred/api/studio/current-user`)
+      .get(`${process.env.NEXT_PUBLIC_BACKEND}${API_PATH}/studio/current-user`)
       .then(res => {
         const userData = res?.data
         setUser({...userData})

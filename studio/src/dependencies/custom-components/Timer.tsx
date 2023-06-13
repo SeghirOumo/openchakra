@@ -4,6 +4,7 @@ import { useStopwatch } from 'react-timer-hook'
 import useEventListener from '../hooks/useEventListener'
 import useInterval from '../hooks/useInterval'
 import axios from 'axios'
+import { API_PATH } from '../utils/consts'
 /**
  * Timer autostarts on ressource loaded
  * Time sent every X seconds
@@ -72,7 +73,7 @@ const Timer = ({
       if (dataSource) {
         try {
           axios
-            .post(`/myAlfred/api/studio/action`, {
+            .post(`${process.env.NEXT_PUBLIC_BACKEND}${API_PATH}/studio/action`, {
               action: 'addSpentTime',
               id: dataSource._id,
               duration: RESSOURCE_SENDING_PERIOD,

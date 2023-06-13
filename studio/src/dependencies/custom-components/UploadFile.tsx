@@ -10,8 +10,9 @@ import { generateUUID } from '../utils/crypto';
 import { getExtension } from './MediaWrapper'
 import { s3Config, S3UrlRessource } from '../utils/s3Config'
 import FileManager from '../utils/S3filemanager'
+import { API_PATH } from '../utils/consts';
 
-const uploadUrl = `/myAlfred/api/studio/action`
+const uploadUrl = `${process.env.NEXT_PUBLIC_BACKEND}${API_PATH}/studio/action`
 
 function createFileFromBlob(folder: string, filename: string, fileData: Blob) {
   const { fileInFolder } = S3UrlRessource({

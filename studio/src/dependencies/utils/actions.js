@@ -8,8 +8,9 @@ import {
   getComponentDataValue
 } from './values';
 import { clearToken } from './token';
+import { API_PATH } from './consts';
 
-const API_ROOT = '/myAlfred/api/studio'
+const API_ROOT = `${process.env.NEXT_PUBLIC_BACKEND}${API_PATH}/studio`
 export const ACTIONS = {
   login: ({ props, level, getComponentValue }) => {
     const email = getComponentValue(props.email, level)

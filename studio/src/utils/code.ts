@@ -34,6 +34,7 @@ import {
 } from './misc';
 import { hasParentType } from './validation';
 import { isJsonString } from '../dependencies/utils/misc'
+import { API_PATH } from '~dependencies/utils/consts';
 
 
 //const HIDDEN_ATTRIBUTES=['dataSource', 'attribute']
@@ -584,7 +585,7 @@ const buildHooks = (components: IComponents) => {
         const dataId = dp.id.replace(/comp-/, '')
         const dpFields = getDataProviderFields(dp).join(',')
         const idPart = dp.id === 'root' ? `\${id ? \`\${id}/\`: \`\`}` : ''
-        const apiUrl = `/myAlfred/api/studio/${dp.props.model}/${idPart}${
+        const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND}${API_PATH}/studio/${dp.props.model}/${idPart}${
           dpFields ? `?fields=${dpFields}` : ''
         }`
         let thenClause=dp.id=='root' && singlePage ?

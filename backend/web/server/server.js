@@ -1,3 +1,5 @@
+const path = require('path')
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') })
 const axios = require('axios')
 const mongoose = require('mongoose')
 const cookieParser = require('cookie-parser')
@@ -105,7 +107,6 @@ const https = require('https')
 const fs = require('fs')
 const studio = require('./routes/api/studio')
 const withings = require('./routes/api/withings')
-const path = require('path')
 const app = express()
 const {serverContextFromRequest} = require('./utils/serverContext')
 
@@ -126,6 +127,12 @@ checkConfig()
     // Body parser middleware
     app.use(bodyParser.urlencoded({extended: true}))
     app.use(bodyParser.json())
+
+    // Authorized domains to request
+    const corsOptions = {
+      origin: process.env.WHITELIST_DOMAINS.split(' ')
+    };
+    app.use(cors(corsOptions))
 
     // Body POST limit
     app.use(express.json({limit: '1mb'}))
@@ -160,8 +167,6 @@ checkConfig()
       }
       return next()
     })
-
-    app.use(cors())
 
     // Check hostname is valid
     app.use('/testping', (req, res) => res.json(RANDOM_ID))

@@ -21,7 +21,7 @@ export function UserWrapper({children}) {
   }, [user])
 
   const getCurrentUser = () => {
-    client(`/myAlfred/api/users/current`)
+    client(`${process.env.NEXT_PUBLIC_API_ROOT}/users/current`)
       .then(data => {
         updateUser(data)
       })

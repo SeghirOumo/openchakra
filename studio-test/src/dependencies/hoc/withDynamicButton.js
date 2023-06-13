@@ -8,6 +8,7 @@ import {
   getConditionalProperties,
 } from '../utils/filters'
 import {Error} from '../utils/notifications'
+import { API_PATH } from '../utils/consts';
 
 const withDynamicButton = Component => {
 
@@ -34,7 +35,7 @@ const withDynamicButton = Component => {
     const [actionAllowed, setActionAllowed]=useState(true)
 
     useEffect(()=> {
-      axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
+      axios.get(`${process.env.NEXT_PUBLIC_BACKEND}${API_PATH}/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
         .then(res => setActionAllowed(res.data))
         .catch(err => console.error(err))
     }, [action, value])
