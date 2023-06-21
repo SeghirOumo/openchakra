@@ -73,7 +73,7 @@ export const ACTIONS = {
       [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'),
         getComponentValue(c, level)||null]
     ))
-    'job,mission,quotation,group,parent,content,recipe,menu,pip'.split(',').forEach(property => {
+    'job,mission,quotation,group,parent,content,recipe,menu,pip,collectiveChallenge'.split(',').forEach(property => {
       if (props[property]) {
         //const dataId=document.getElementById(`${props[property]}${level}`)?.getAttribute('_id')
         const dataId=getComponent(props[property], level)?.getAttribute('_id')||null
@@ -751,6 +751,27 @@ export const ACTIONS = {
       value: value._id,
     }
     return axios.post(url, body)
+  },
+
+  smartdiet_join_team: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_join_team',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
+  smartdiet_find_team_member: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_find_team_member',
+      value: value._id,
+    }
+    return axios.post(url, body).then(res => ({
+      model: 'teamMember',
+      value: res.data,
+    }))
   },
 
 }

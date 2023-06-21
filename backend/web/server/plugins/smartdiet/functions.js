@@ -5,11 +5,18 @@ const {
   getModel,
   idEqual,
   loadFromDb,
+  setFilterDataUser,
   setPostCreateData,
   setPreCreateData,
   setPreprocessGet,
   simpleCloneModel,
 } = require('../../utils/database')
+const CollectiveChallenge = require('../../models/CollectiveChallenge')
+const Pip = require('../../models/Pip')
+const ChallengeUserPip = require('../../models/ChallengeUserPip')
+const ChallengeUserPipSchema = require('./schemas/ChallengeUserPipSchema')
+const ChallengePip = require('../../models/ChallengePip')
+const {BadRequestError} = require('../../utils/errors')
 const {
   getUserIndChallengeTrophy,
   getUserKeyProgress,
@@ -19,6 +26,7 @@ const {
   getUserSpoons
 } = require('./spoons')
 const mongoose = require('mongoose')
+require('lodash.product')
 const lodash=require('lodash')
 const moment = require('moment')
 const UserSurvey = require('../../models/UserSurvey')
@@ -27,6 +35,8 @@ const Offer = require('../../models/Offer')
 const Content = require('../../models/Content')
 const Company = require('../../models/Company')
 const User = require('../../models/User')
+const Team = require('../../models/Team')
+const TeamMember = require('../../models/TeamMember')
 const {
   ACTIVITY,
   COMPANY_ACTIVITY,
@@ -48,6 +58,16 @@ const {
   TARGET_TYPE,
   UNIT,
 } = require('./consts')
+
+const filterDataUser = ({model, data, id, user}) => {
+  if (model=='offer' && !id) {
+    return Offer.find({company: null})
+      .then(offers => data.filter(d => offers.some(o => idEqual(d._id, o._id))))
+  }
+  return Promise.resolve(data)
+}
+
+setFilterDataUser(filterDataUser)
 
 const preprocessGet = ({model, fields, id, user}) => {
   if (model=='loggedUser') {
@@ -71,6 +91,13 @@ const preCreate = ({model, params, user}) => {
   }
   if (['message'].includes(model)) {
     params.sender=user
+  }
+  if (['team'].includes(model)) {
+    return Team.exists({name: params.name?.trim(), collectiveChallenge: params.collectiveChallenge})
+      .then(exists => {
+        if (exists) { throw new BadRequestError(`L'équipe ${params.name} existe déjà pour ce challenge`)}
+        return {model, params}
+      })
   }
   return Promise.resolve({model, params})
 }
@@ -111,6 +138,12 @@ USER_MODELS.forEach(m => {
       instance: 'ObjectID',
       options: {ref: 'webinar'}},
   })
+  declareVirtualField({model: m, field: 'past_webinars', instance: 'Array',
+    requires: 'webinars', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'webinar'}},
+  })
   declareVirtualField({model: m, field: '_all_events', instance: 'Array',
     requires: '_all_menus,_all_individual_challenges,collective_challenges,_all_webinars',
     multiple: true,
@@ -135,19 +168,32 @@ USER_MODELS.forEach(m => {
       instance: 'ObjectID',
       options: {ref: 'individualChallenge'}},
   })
+  declareVirtualField({model: m, field: 'passed_individual_challenges', instance: 'Array',
+    requires: '_all_individual_challenges,passed_events', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'individualChallenge'}},
+  })
   declareVirtualField({model: m, field: '_all_menus', instance: 'menu',
     multiple: true,
     caster: {
       instance: 'ObjectID',
       options: {ref: 'menu'}},
   })
-  declareVirtualField({model: m, field: 'available_menu', instance: 'menu',
-    multiple: false,
+  declareVirtualField({model: m, field: 'available_menus', instance: 'Array',
+    multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'menu'}},
+  })
+  declareVirtualField({model: m, field: 'past_menus', instance: 'Array',
+    multiple: true,
     caster: {
       instance: 'ObjectID',
       options: {ref: 'menu'}},
   })
   declareVirtualField({model: m, field: 'collective_challenges', instance: 'Array', multiple: true,
+    requires:'company.collective_challenges',
     caster: {
       instance: 'ObjectID',
       options: {ref: 'collectiveChallenge'}},
@@ -221,6 +267,16 @@ declareVirtualField({model: 'company', field: 'children', instance: 'Array', mul
   caster: {
     instance: 'ObjectID',
     options: {ref: 'company'}},
+})
+declareVirtualField({model: 'company', field: 'collective_challenges', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'collectiveChallenge'}},
+})
+declareVirtualField({model: 'company', field: 'offers', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'offer'}},
 })
 
 
@@ -364,6 +420,44 @@ declareVirtualField({model: 'pip', field: 'comments', instance: 'Array', multipl
 })
 declareVirtualField({model: 'pip', field: 'comments_count', instance: 'Number', requires: 'comments'})
 
+declareVirtualField({model: 'team', field: 'members', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'teamMember'}},
+})
+
+declareVirtualField({model: 'teamMember', field: 'spoons', instance: 'Number'})
+declareVirtualField({model: 'teamMember', field: 'pips', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'challengeUserPip'}},
+})
+
+declareVirtualField({model: 'collectiveChallenge', field: 'teams', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'team'}},
+})
+
+declareVirtualField({model: 'collectiveChallenge', field: 'pips', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'challengePip'}},
+})
+
+declareVirtualField({model: 'challengePip', field: 'userPips', instance: 'Array', multiple: true,
+  requires: 'userPips.valid,pip.spoons',
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'challengeUserPip'}},
+})
+declareVirtualField({model: 'challengePip', field: 'spoons', instance: 'Number'})
+declareVirtualField({model: 'challengePip', field: 'pendingUserPips', instance: 'Array', multiple: true,
+  requires: 'userPips.proof,userPips.valid',
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'challengeUserPip'}},
+})
 
 const getAvailableContents = (user, params, data) => {
   return Content.find()
@@ -425,8 +519,7 @@ const getPinnedMessages = (user, params, data) => {
 }
 
 const getMenuShoppingList = (user, params, data) => {
-  console.log(data.recipes.map(r => [r.recipe.name,r.recipe._id]))
-  const ingredients=lodash.flatten(data?.recipes.map(r => r.recipe.ingredients))
+  const ingredients=lodash.flatten(data?.recipes.map(r => r.recipe?.ingredients).filter(v => !!v))
   const ingredientsGroup=lodash.groupBy(ingredients, i => i.ingredient._id)
   const result=lodash(ingredientsGroup)
     .mapValues(ingrs=>({ingredient:ingrs[0].ingredient, quantity: lodash.sumBy(ingrs, 'quantity')}))
@@ -483,13 +576,12 @@ declareComputedField('menu', 'shopping_list', getMenuShoppingList)
 declareComputedField('key', 'user_surveys_progress', getUserSurveysProgress)
 
 
-const postCreate = ({model, params, data}) => {
+const postCreate = ({model, params, data,user}) => {
   // Create company => duplicate offer
   if (model=='company') {
-    return Offer.findById(data.offer)
-      .then(offer => Offer.create(simpleCloneModel(offer)))
-      .then(offer => { data.offer=offer._id; return data })
-      .then(data => data.save())
+    return Offer.findById(params.offer)
+      .then(offer => Offer.create( {...simpleCloneModel(offer), company: data._id}))
+      .then(offer => data)
   }
   if (model=='booking') {
     console.log(`Sending mail to ${data.booking_user.email} and admins for booking ${data._id}`)
@@ -497,11 +589,71 @@ const postCreate = ({model, params, data}) => {
     User.find({role: FUMOIR_MANAGER})
       .then(managers => Promise.allSettled(managers.map(manager => sendNewBookingToManager({booking: data, manager}))))
   }
+  if (model=='team') {
+    return TeamMember.create({team: data, user})
+      .then(()=> {
+        ensureChallengePipsConsistency()
+        return data
+      })
+  }
+  if (model=='collectiveChallenge') {
+    return Pip.find()
+      .then (pips => Promise.all(pips.map(p => ChallengePip.create({pip:p, collectiveChallenge:data}))))
+      .then(()=> {
+        ensureChallengePipsConsistency()
+        return data
+      })
+  }
+  if (model=='pip') {
+    ensureChallengePipsConsistency()
+  }
+  if (model=='teamMember') {
+    ensureChallengePipsConsistency()
+  }
 
   return Promise.resolve(data)
 }
 
 setPostCreateData(postCreate)
+
+const ensureChallengePipsConsistency = () => {
+  // Does every challenge have all pips ?
+  return Promise.all([Pip.find({}, "_id"), CollectiveChallenge.find({}, "_id"),
+    TeamMember.find().populate('team'), ChallengeUserPip.find()])
+    .then(([pips, challenges, teamMembers, challengeUserPips]) => {
+      // Ensure all challenge pips exist
+      const updateChallengePips=lodash.product(pips, challenges)
+        .map(([pip, challenge]) => ChallengePip.updateMany(
+          {pip:pip, collectiveChallenge:challenge},
+          {pip:pip, collectiveChallenge:challenge},
+          {upsert: true}
+        ))
+      Promise.all(updateChallengePips)
+        .then(res => {
+          console.log(`Upsert challenge pips ok:${JSON.stringify(res)}`)
+          // Ensure all team mebers pips exist
+          const updateMembersPips=ChallengePip.find()
+          .then(challengePips => {
+            return teamMembers.map(member => {
+              const pips=challengePips.filter(p =>idEqual(p.collectiveChallenge, member.team.collectiveChallenge))
+              return Promise.all(pips.map(p => {
+                return ChallengeUserPip.update(
+                  {pip:p, user: member},
+                  {pip:p, user: member },
+                  {upsert: true}
+                )
+              }))
+            })
+          })
+
+          Promise.all(updateMembersPips)
+          .then(res => console.log(`Upsert member pips ok:${JSON.stringify(res)}`))
+          .catch(err => console.error(`Upsert member pips error:${err}`))
+        })
+        .catch(err => console.error(`Upsert challenge pips error:${err}`))
+
+    })
+}
 
 /** Upsert PARTICULARS company */
 Company.findOneAndUpdate(
@@ -514,4 +666,5 @@ Company.findOneAndUpdate(
 
 module.exports={
   getAvailableContents,
+  ensureChallengePipsConsistency,
 }
