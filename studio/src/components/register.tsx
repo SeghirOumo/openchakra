@@ -30,8 +30,17 @@ export const registerComponent = ({
   builderFunction,
 }: registerParams) => {
   console.log(`Registering custom component ${componentType}`)
-  registerComponentType(componentType)
-  registerComponentMenu({ componentType, menuChildren })
+  try {
+    registerComponentType(componentType)
+  } catch (error) {
+    console.error(error)
+  }
+
+  try {
+    registerComponentMenu({ componentType, menuChildren })
+  } catch (error) {
+    console.error(error)
+  }
   previewComponent && registerPreview({ componentType, previewComponent, isBoxWrapped })
   registerPanel({ componentType, componentPanel })
   builderFunction && registerBuilder({ componentType, builderFunction })
