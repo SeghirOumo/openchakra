@@ -70,7 +70,7 @@ type ComponentType =
   | 'NumberDecrementStepper'
   | 'Rating'
   | 'Pdf'
-  | 'PdfView'
+  | 'PdfDownload'
   | 'PdfText'
   | 'Progress'
   | 'Radio'

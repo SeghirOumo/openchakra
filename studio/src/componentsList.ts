@@ -160,19 +160,6 @@ let menuItems: MenuItems = {
     rootParentType: 'Input',
     children: {},
   },
-  Pdf: {
-    children: {
-      Pdf: {
-        title: 'Pdf',
-      },
-      PdfView: {
-        title: 'Pdf view',
-      },
-      PdfText: {
-        title: 'Pdf text',
-      },
-    },
-  },
   Progress: {},
   Radio: {
     group: 'form',

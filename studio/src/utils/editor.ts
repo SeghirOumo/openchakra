@@ -50,7 +50,7 @@ export const COMPONENTS: (ComponentType | MetaComponentType)[] = [
   'NumberFormat',
   'Rating',
   'Pdf',
-  'PdfView',
+  'PdfDownload',
   'PdfText',
   'Progress',
   'Radio',

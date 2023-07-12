@@ -2,10 +2,9 @@ import React from 'react'
 import { useDropComponent } from '~hooks/useDropComponent'
 import { useInteractive } from '~hooks/useInteractive'
 import { Box } from '@chakra-ui/react'
-import ComponentPreview from '~components/editor/ComponentPreview'
-import Pdf from '~dependencies/custom-components/Pdf'
+import PdfDownload from '~dependencies/custom-components/PdfDownload'
 
-const PdfPreview: React.FC<IPreviewProps> = ({ component, children }) => {
+const PdfDownloadPreview: React.FC<IPreviewProps> = ({ component }) => {
 
   const { drop, isOver } = useDropComponent(component.id)
   const { props, ref } = useInteractive(component, true)
@@ -16,14 +15,9 @@ const PdfPreview: React.FC<IPreviewProps> = ({ component, children }) => {
 
   return (
     <Box pos="relative" ref={drop(ref)} {...props}>
-      <Pdf>
-      {component.children.map((key: string) => (
-         <ComponentPreview key={key} componentName={key} />
-      ))}
-      </Pdf>
+      <PdfDownload />
     </Box>
   )
 }
 
-export default PdfPreview
-
+export default PdfDownloadPreview
