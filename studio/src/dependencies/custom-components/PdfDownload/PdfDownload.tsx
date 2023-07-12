@@ -1,18 +1,20 @@
 import React from 'react';
-import { usePDF } from '@react-pdf/renderer';
-
+import { Document, usePDF, Page } from '@react-pdf/renderer';
 
 const PdfDownload = ({
-  pdf, 
+  pdf = null, 
   filename = 'bullshit',
   ...props
 }) => {
 
-  const Pdf = pdf
 
-  const [instance, update] = usePDF({document: Pdf})
+  // const {pdf} = usePdfContext()
 
-  console.log(instance)
+  // const Pdf = pdf?.current || <Document><Page></Page></Document>
+
+  // const [instance, update] = usePDF({document: Pdf })
+
+  // console.log('ohoho', typeof Pdf)
 
   return (
     <a
