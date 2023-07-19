@@ -29,7 +29,7 @@ export const deploy = (state: ProjectState, models: any) => {
       }
       return Promise.all(
         pages.map(page => {
-          return generateCode(page.pageId, state.pages, models)
+          return generateCode(page.pageId, state.pages, models, state)
             .catch(err => {
               return Promise.reject(`Page "${page.pageName}":${err}`)
             })

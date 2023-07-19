@@ -659,8 +659,10 @@ export const generateCode = async (
     [key: string]: PageState
   },
   models: any,
+  project: ProjectState
 ) => {
   const { components, metaTitle, metaDescription, metaImageUrl } = pages[pageId]
+  const { settings } = project
 
   const extraImports: string[] = []
   let hooksCode = buildHooks(components)
@@ -806,9 +808,13 @@ const ${componentName} = () => {
   return ${autoRedirect ? 'user===null && ': ''} (
     <>
     <Metadata
-      metaTitle={'${addBackslashes(metaTitle)}'}
-      metaDescription={'${addBackslashes(metaDescription)}'}
-      metaImageUrl={'${metaImageUrl}'}
+      metaTitle={'${metaTitle && addBackslashes(metaTitle)}'}
+      metaDescription={'${metaDescription ? addBackslashes(metaDescription) : settings?.description}'}
+      metaImageUrl={'${metaImageUrl ? metaImageUrl : settings?.metaImage}'}
+      metaName={'${settings?.name}'}
+      metaUrl={'${settings?.url}'}
+      metaFavicon32={'${settings?.favicon32}'}
+      metaGaTag={${process?.env?.NEXT_PUBLIC_MODE === 'production' ? `'${settings?.gaTag}'` : null}}
     />
     ${code}
     </>
