@@ -1,6 +1,12 @@
 import {jsPDF} from 'jspdf'
 import axios from 'axios'
 import lodash from 'lodash'
+<<<<<<< Updated upstream
+=======
+import html2canvas from 'html2canvas'
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import jsPdf from 'jspdf'
+>>>>>>> Stashed changes
 
 import {
   clearComponentValue,
@@ -359,18 +365,104 @@ export const ACTIONS = {
     return axios.post(url, body)
   },
 
-  savePagePDF: () => {
-    /** TODO Prints white pages
-    var doc = new jsPDF('p', 'pt','a4',true)
-    var elementHTML = document.querySelector("#root")
-    doc.html(document.body, {
-        callback: function(doc) {
-            // Save the PDF
-            doc.save('facture.pdf');
-        },
+  savePagePDF: async () => {
+
+      // const doc = new jsPdf({
+      //   orientation: 'p',
+      //   unit: 'px',
+      //   format: 'a4',
+      //   hotfixes: ['px_scaling'],
+      // });
+    
+      // const domElement = document.getElementById('root')
+      // html2canvas(domElement, { width: doc.internal.pageSize.getWidth(), height: doc.internal.pageSize.getHeight(), onclone: (document) => {
+      //   document.querySelector('button').style.visibility = 'hidden'
+      // }})
+      // .then((canvas) => {
+      //     const imgData = canvas.toDataURL('image/png')
+      //     const x_ratio=doc.internal.pageSize.getWidth()/imgData.width
+      //     console.log({x_ratio}, imgData.width, doc.internal.pageSize.getWidth())
+      //     doc.addImage(imgData, 'PNG', 0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight())
+      //     doc.save('your-filename.pdf')
+      // })
+
+    //return window.print()
+
+    var svgElements = document.body.querySelectorAll('img');
+    svgElements.forEach(function(item) {
+      if (item.src.endsWith('.svg')) {
+        item.setAttribute("width", item.getBoundingClientRect().width);
+        item.setAttribute("height", item.getBoundingClientRect().height);
+        item.style.width = null;
+        item.style.height= null;
+      }
     });
-    */
-    return window.print()
+
+    const images = document.getElementsByTagName('img');
+    const imagePromises = [];
+
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      const imagePromise = new Promise((resolve, reject) => {
+          if (image.complete) {
+              resolve();
+            } else {
+              image.onload = () => resolve(image);
+              image.onerror = reject;
+            }
+      });
+      imagePromises.push(imagePromise);
+    }
+
+    // return Promise.allSettled(imagePromises)
+    //   .then(res => {
+      
+        return await PDFDocument.create().then(pdfDoc => {    
+          var body = document.body,
+              html = document.documentElement;
+
+          var height = Math.max( body.scrollHeight, body.offsetHeight, 
+                                html.clientHeight, html.scrollHeight, html.offsetHeight );
+
+          const page = pdfDoc.addPage();
+          const element = document.getElementById('root');
+          
+          const html2canvasOptions = {
+            ignoreElements: element => element.tagName.toLowerCase()=='button', 
+            windowHeight: height,
+            dpi: 300,
+            letterRendering: true,
+          }
+
+          html2canvas(element, html2canvasOptions )
+            .then(canvas => {
+              const imgData = canvas.toDataURL('image/png');
+              
+              pdfDoc.embedPng(encodeURI(imgData))
+                .then(jpgImage => {
+                  const x_ratio=page.getWidth()/jpgImage.width
+                  const { width, height } = jpgImage.scale(x_ratio);
+                  page.drawImage(jpgImage, {
+                    x: (page.getWidth() - width)/2,
+                    y: page.getHeight() - height,
+                    width,
+                    height,
+                  });
+
+                  pdfDoc.save()
+                    .then(pdfBytes => {
+                      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                      const link = document.createElement('a');
+                      link.href = URL.createObjectURL(blob);
+                      link.download = 'document2.pdf';
+                      link.click();
+                      return null
+                    })
+                })
+            })
+        })
+      // })
+
   },
 
   deactivateAccount: ({value, props, level, getComponentValue}) => {
