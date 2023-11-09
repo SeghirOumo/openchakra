@@ -14,6 +14,7 @@ const passport = require('passport')
 const glob = require('glob')
 const cors = require('cors')
 const autoIncrement = require('mongoose-auto-increment')
+const cluster = require('cluster')
 const {
   RANDOM_ID,
   checkConfig,
@@ -139,12 +140,17 @@ const routes = require('./routes')
 const routerHandler = routes.getRequestHandler(nextApp)
 const studio = require('./routes/api/studio')
 const withings = require('./routes/api/withings')
-const app = express()
 const {serverContextFromRequest} = require('./utils/serverContext')
 
-// TODO Terminer les notifications
-// throw new Error(`\n${'*'.repeat(30)}\n  TERMINER LES NOTIFICATIONS\n${'*'.repeat(30)}`)
-// checkConfig
+const numCPUs = require('os').cpus().length
+
+if (cluster.isMaster) {
+  // Fork worker processes for each CPU core
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork()
+  }
+}
+else  {
 checkConfig()
   .then(() => {
     return mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
@@ -156,6 +162,7 @@ checkConfig()
     return nextApp.prepare()
   })
   .then(() => {
+    const app = express()
     // Body parser middleware
     app.use(bodyParser.urlencoded({extended: true}))
     app.use(bodyParser.json())
@@ -263,3 +270,4 @@ checkConfig()
     console.error(`**** Démarrage impossible:${err}`)
     process.exit(1)
   })
+}
